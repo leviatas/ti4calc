@@ -4,7 +4,7 @@ import { describe, it } from "node:test"
 import { getAllBattleEffects, isBattleEffectRelevant } from "@/core/battleeffect/battleEffects"
 import { createParticipant } from "@/core/battleSetup"
 import { TEST_NUMBER_OF_ROLLS } from "@/core/constant"
-import { parseUnitStats } from "@/core/unitStats"
+import { cleanUnitName, describeUnitStats, parseUnitStats } from "@/core/unitStats"
 import { getTestParticipant, testBattleReport } from "@/util/util.test"
 
 describe("Twilight's Fall Mahact Kings", () => {
@@ -405,6 +405,31 @@ describe("Custom unit stats", () => {
       { side: "draw", percentage: 0.115 },
       { side: "defender", percentage: 0.442 },
     ])
+  })
+
+  it("describes the stats in words", () => {
+    assert.equal(
+      describeUnitStats("c4x1.b4x2.sd.dh"),
+      "Combat 4, Bombardment 4 (x2), Sustain damage, Immune to Direct Hit",
+    )
+    assert.equal(describeUnitStats("c8x1.a6x3"), "Combat 8, Anti-fighter barrage 6 (x3)")
+    assert.equal(describeUnitStats("bad"), undefined)
+  })
+
+  it("reads the unit card names from the query and cleans them", () => {
+    const attacker = createParticipant("attacker", undefined, {
+      "attacker-faction": "Ruby Monarch (TF)",
+      "attacker-stats-dreadnought": "c4x1.b4x2.sd",
+      "attacker-unitname-dreadnought": "Exotrireme",
+      "attacker-unitname-cruiser": "<script>Corsair</script>",
+      "attacker-unitname-carrier": "<>",
+      "defender-unitname-mech": "Eidolon Terminus",
+    })
+    assert.deepEqual(attacker.unitNames, {
+      dreadnought: "Exotrireme",
+      cruiser: "scriptCorsairscript",
+    })
+    assert.equal(cleanUnitName("Super-Dreadnought (TF)"), "Super-Dreadnought (TF)")
   })
 
   it("stats replace the printed values of the unit", () => {

@@ -89,6 +89,8 @@ export interface Participant {
   // Custom printed stats per unit type, see core/unitStats.ts. Used for Twilight's Fall unit
   // upgrades spliced from other factions, which the calculator has no model of its own for.
   unitStats?: PartialRecord<UnitType, string>
+  // The name of the unit card behind each custom stats, such as "Exotrireme", shown in the options
+  unitNames?: PartialRecord<UnitType, string>
 
   riskDirectHit: boolean
 }
@@ -165,6 +167,8 @@ export interface AfbHitsToAssign {
 export interface BattleResult {
   winner: BattleWinner
   units: string
+  // units of each type that took part in the combat and were destroyed in it
+  losses: Record<Side, PartialRecord<UnitType, number>>
 }
 
 export const BattleWinner = {

@@ -75,6 +75,49 @@ export function parseUnitStats(value: string): UnitStats | undefined {
   return stats
 }
 
+const ROLL_LABELS = {
+  combat: "Combat",
+  afb: "Anti-fighter barrage",
+  bombardment: "Bombardment",
+  spaceCannon: "Space cannon",
+} as const
+
+/** The stats in words, for example "Combat 4, Bombardment 4 (x2), Sustain damage". */
+export function describeUnitStats(value: string): string | undefined {
+  const stats = parseUnitStats(value)
+  if (!stats) {
+    return undefined
+  }
+  const parts: string[] = []
+  for (const key of objectKeys(ROLL_LABELS)) {
+    const roll = stats[key]
+    if (roll) {
+      parts.push(`${ROLL_LABELS[key]} ${roll.hit}${roll.count > 1 ? ` (x${roll.count})` : ""}`)
+    }
+  }
+  if (stats.sustainDamage) {
+    parts.push("Sustain damage")
+  }
+  if (stats.planetaryShield) {
+    parts.push("Planetary shield")
+  }
+  if (stats.immuneToDirectHit) {
+    parts.push("Immune to Direct Hit")
+  }
+  return parts.join(", ")
+}
+
+const MAX_UNIT_NAME_LENGTH = 60
+
+/** A unit card name from a link, trimmed and stripped of anything but plain text. */
+export function cleanUnitName(value: string): string | undefined {
+  const name = value
+    .replace(/[^\p{L}\p{N} '’.,()-]/gu, "")
+    .trim()
+    .slice(0, MAX_UNIT_NAME_LENGTH)
+  return name.length > 0 ? name : undefined
+}
+
 export function isValidUnitStats(value: string) {
   return parseUnitStats(value) !== undefined
 }

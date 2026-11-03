@@ -6,6 +6,7 @@ import DamagedUnitsView from "@/component/damagedUnitsView"
 import GalvanizedUnitsView from "@/component/galvanizedUnitsView"
 import NumberInput from "@/component/numberInput"
 import { OptionsRowView } from "@/component/optionsRowView"
+import Popover from "@/component/popover"
 import { Participant } from "@/core/battle-types"
 import { getActioncards } from "@/core/battleeffect/actioncard"
 import { getAgendas } from "@/core/battleeffect/agenda"
@@ -25,6 +26,7 @@ import {
   getPromissary,
 } from "@/core/factions/faction"
 import { getTwilightsFallAbilities } from "@/core/factions/twilightsFall"
+import { describeUnitStats } from "@/core/unitStats"
 import { objectKeys } from "@/util/util-object"
 
 interface OptionsProps {
@@ -121,12 +123,28 @@ export default function OptionsView(props: OptionsProps) {
             description="If units with SUSTAIN DAMAGE should be assigned the first hits. Direct hit can only be played in space combat, so ground combat is not affected."
           />
           {(hasUnitStats(props.attacker) || hasUnitStats(props.defender)) && (
-            <OptionsRowView
-              left={getUnitStatsView(props.attacker, props.attackerOnChange)}
-              right={getUnitStatsView(props.defender, props.defenderOnChange)}
-              name="Custom unit stats"
-              description="Printed stats for units the calculator has no model of, such as Twilight's Fall unit upgrades spliced from another faction. They are usually filled in by a link from a game. c = combat, a = anti-fighter barrage, b = bombardment, s = space cannon (hit value x dice), sd = sustain damage, ps = planetary shield, dh = immune to direct hit. For flagships and mechs only the listed rolls are set and the unit keeps its other abilities. Clear them to use the normal units."
-            />
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <h2
+                style={{
+                  textAlign: "center",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                Spliced unit upgrades
+                <Popover text="The unit cards in this battle that the calculator has no model of, such as Twilight's Fall unit upgrades spliced from another faction, with the printed stats used for them. They are usually filled in by a link from a game. Only their stats are simulated, not their text abilities. For flagships and mechs only the listed rolls are set and the unit keeps its other abilities. Clear them to use the normal units." />
+              </h2>
+              <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+                <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+                  {getUnitStatsView(props.attacker, props.attackerOnChange)}
+                </div>
+                <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+                  {getUnitStatsView(props.defender, props.defenderOnChange)}
+                </div>
+              </div>
+            </div>
           )}
           <DamagedUnitsView {...props} />
           <GalvanizedUnitsView {...props} />
@@ -211,16 +229,31 @@ const getUnitStatsView = (participant: Participant, onChange: (p: Participant) =
     return null
   }
   return (
-    <div style={{ display: "flex", flexDirection: "column", fontSize: "12px" }}>
-      {objectKeys(participant.unitStats ?? {}).map((unitType) => (
-        <span key={unitType}>
-          {unitType}: {participant.unitStats?.[unitType]}
-        </span>
-      ))}
+    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+      <span style={{ fontSize: "12px", textTransform: "capitalize", opacity: 0.7 }}>
+        {participant.side}
+      </span>
+      {objectKeys(participant.unitStats ?? {}).map((unitType) => {
+        const stats = participant.unitStats?.[unitType] ?? ""
+        const name = participant.unitNames?.[unitType]
+        return (
+          <div
+            key={unitType}
+            style={{ display: "flex", flexDirection: "column", fontSize: "14px" }}
+          >
+            <span>
+              <b>{name ?? unitType}</b>
+              {name !== undefined && ` (${unitType})`}
+            </span>
+            <span style={{ fontSize: "13px" }}>{describeUnitStats(stats) ?? stats}</span>
+          </div>
+        )
+      })}
       <button
         type="button"
+        style={{ alignSelf: "flex-start" }}
         onClick={() => {
-          onChange({ ...participant, unitStats: undefined })
+          onChange({ ...participant, unitStats: undefined, unitNames: undefined })
         }}
       >
         Clear
