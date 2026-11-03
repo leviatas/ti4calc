@@ -86,6 +86,9 @@ export interface Participant {
   damagedUnits: PartialRecord<UnitType, number>
   galvanizedUnits: PartialRecord<UnitType, number>
   battleEffects: Record<string, number | undefined>
+  // Custom printed stats per unit type, see core/unitStats.ts. Used for Twilight's Fall unit
+  // upgrades spliced from other factions, which the calculator has no model of its own for.
+  unitStats?: PartialRecord<UnitType, string>
 
   riskDirectHit: boolean
 }

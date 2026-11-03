@@ -24,6 +24,7 @@ import {
   getGeneralEffectFromFactions,
   getPromissary,
 } from "@/core/factions/faction"
+import { getTwilightsFallAbilities } from "@/core/factions/twilightsFall"
 import { objectKeys } from "@/util/util-object"
 
 interface OptionsProps {
@@ -62,6 +63,11 @@ export default function OptionsView(props: OptionsProps) {
   const actioncards = filterOutBattleEffects(getActioncards(), props.attacker, props.defender)
   const agendas = filterOutBattleEffects(getAgendas(), props.attacker, props.defender)
   const relics = filterOutBattleEffects(getRelics(), props.attacker, props.defender)
+  const twilightsFall = filterOutBattleEffects(
+    getTwilightsFallAbilities(),
+    props.attacker,
+    props.defender,
+  )
 
   const [show, setShow] = useState(() => {
     return (
@@ -72,7 +78,9 @@ export default function OptionsView(props: OptionsProps) {
       objectKeys(props.attacker.damagedUnits).length > 0 ||
       objectKeys(props.defender.damagedUnits).length > 0 ||
       objectKeys(props.attacker.galvanizedUnits).length > 0 ||
-      objectKeys(props.defender.galvanizedUnits).length > 0
+      objectKeys(props.defender.galvanizedUnits).length > 0 ||
+      hasUnitStats(props.attacker) ||
+      hasUnitStats(props.defender)
     )
   })
 
@@ -112,10 +120,23 @@ export default function OptionsView(props: OptionsProps) {
             name="Risk direct hit"
             description="If units with SUSTAIN DAMAGE should be assigned the first hits. Direct hit can only be played in space combat, so ground combat is not affected."
           />
+          {(hasUnitStats(props.attacker) || hasUnitStats(props.defender)) && (
+            <OptionsRowView
+              left={getUnitStatsView(props.attacker, props.attackerOnChange)}
+              right={getUnitStatsView(props.defender, props.defenderOnChange)}
+              name="Custom unit stats"
+              description="Printed stats for units the calculator has no model of, such as Twilight's Fall unit upgrades spliced from another faction. They are usually filled in by a link from a game. c = combat, a = anti-fighter barrage, b = bombardment, s = space cannon (hit value x dice), sd = sustain damage, ps = planetary shield, dh = immune to direct hit. Clear them to use the normal units."
+            />
+          )}
           <DamagedUnitsView {...props} />
           <GalvanizedUnitsView {...props} />
           <OptionsPartView title="Tech" battleEffects={techs} {...props} />
           <OptionsPartView title="Faction specific" battleEffects={factionTechs} {...props} />
+          <OptionsPartView
+            title="Twilight's Fall ability"
+            battleEffects={twilightsFall}
+            {...props}
+          />
           <OptionsPartView title="Promissary note" battleEffects={promissary} {...props} />
           <OptionsPartView title="Agent" battleEffects={agents} {...props} />
           <OptionsPartView title="Commander" battleEffects={commanders} {...props} />
@@ -178,6 +199,32 @@ function OptionsPartView({
           />
         )
       })}
+    </div>
+  )
+}
+
+const hasUnitStats = (participant: Participant) =>
+  objectKeys(participant.unitStats ?? {}).length > 0
+
+const getUnitStatsView = (participant: Participant, onChange: (p: Participant) => void) => {
+  if (!hasUnitStats(participant)) {
+    return null
+  }
+  return (
+    <div style={{ display: "flex", flexDirection: "column", fontSize: "12px" }}>
+      {objectKeys(participant.unitStats ?? {}).map((unitType) => (
+        <span key={unitType}>
+          {unitType}: {participant.unitStats?.[unitType]}
+        </span>
+      ))}
+      <button
+        type="button"
+        onClick={() => {
+          onChange({ ...participant, unitStats: undefined })
+        }}
+      >
+        Clear
+      </button>
     </div>
   )
 }

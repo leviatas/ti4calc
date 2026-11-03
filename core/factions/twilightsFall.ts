@@ -1,3 +1,6 @@
+import _times from "lodash/times"
+
+import { doBombardment } from "@/core/battle"
 import {
   BattleInstance,
   EFFECT_HIGH_PRIORITY,
@@ -5,9 +8,10 @@ import {
   Place,
 } from "@/core/battle-types"
 import { BattleEffect } from "@/core/battleeffect/battleEffects"
-import { HitInfo } from "@/core/roll"
-import { defaultRoll, UnitInstance, UnitType } from "@/core/unit"
-import { getUnits } from "@/core/unitGet"
+import { Faction } from "@/core/factions/faction"
+import { getHits, HitInfo } from "@/core/roll"
+import { defaultRoll, getUnitWithImproved, UnitInstance, UnitType } from "@/core/unit"
+import { getLowestWorthSustainUnit, getUnits } from "@/core/unitGet"
 import { logWrapper } from "@/util/util-log"
 
 /**
@@ -307,3 +311,140 @@ export const aSickeningLurch: BattleEffect[] = [
     },
   },
 ]
+
+export function isTwilightsFallKing(faction: Faction) {
+  return faction.endsWith("(TF)")
+}
+
+/**
+ * Faction techs and faction abilities of the base factions that also exist as Twilight's Fall
+ * ability cards with the same rules text. A Mad Mahact King can splice them, so any king may use
+ * them, whichever faction printed them.
+ */
+const SPLICEABLE_FACTION_EFFECTS = new Set([
+  "Munitions Reserves",
+  "Non-Euclidean Shielding",
+  "Dimensional Splicer",
+  "Valkyrie Particle Weave",
+  "Devotion",
+])
+
+export function canTwilightsFallKingUse(faction: Faction, effect: BattleEffect) {
+  return isTwilightsFallKing(faction) && SPLICEABLE_FACTION_EFFECTS.has(effect.name)
+}
+
+/**
+ * Twilight's Fall ability cards whose rules differ from, or are automatic for, the faction that
+ * printed them in the base game. They are options for the kings only.
+ * Reference: https://scottmk.github.io/ti4-reference/twilights-fall/
+ */
+export const twilightsFallAbilities: BattleEffect[] = [
+  {
+    type: "twilights-fall",
+    name: "Unrelenting (TF)",
+    description: "Ability: Apply +1 to the result of each of your unit's combat rolls.",
+    place: "both",
+    transformUnit: (unit: UnitInstance) => {
+      if (unit.combat) {
+        return getUnitWithImproved(unit, "combat", "hit", "permanent")
+      } else {
+        return unit
+      }
+    },
+  },
+  {
+    type: "twilights-fall",
+    name: "Supercharge (TF)",
+    description:
+      "Ability: Before making a combat roll, choose 1 of your units and apply +2 to the result of its combat roll. The unit that gains the most from it is chosen each round.",
+    place: "both",
+    onCombatRound: (p: ParticipantInstance, battle: BattleInstance) => {
+      let best: UnitInstance | undefined
+      let bestGain = 0
+      for (const unit of getUnits(p, battle.place, false)) {
+        if (!unit.combat) {
+          continue
+        }
+        const roll = unit.combat
+        const hitOn = roll.hit - roll.hitBonus - roll.hitBonusTmp
+        const dice = roll.count + roll.countBonus + roll.countBonusTmp
+        // a die can not hit on better than 1+, nor gain anything once it already does
+        const gain = dice * Math.max(0, Math.min(hitOn, 11) - Math.max(hitOn - 2, 1))
+        if (gain > bestGain) {
+          best = unit
+          bestGain = gain
+        }
+      }
+      if (best) {
+        best.combat!.hitBonusTmp += 2
+        logWrapper(`${p.side} used Supercharge on ${best.type}`)
+      }
+    },
+  },
+  {
+    type: "twilights-fall",
+    name: "Ambush (TF)",
+    description:
+      "Ability: At the start of a space combat, you may roll 1 die for each of up to 2 of your cruisers or destroyers in the system. For each result equal to or greater than that ship's combat value, produce 1 hit; your opponent must assign it to 1 of their ships.",
+    place: "space",
+    onStart: (p: ParticipantInstance, _battle: BattleInstance, op: ParticipantInstance) => {
+      const cruisers = p.units.filter((u) => u.type === UnitType.cruiser && !!u.combat).slice(0, 2)
+      const destroyers = p.units
+        .filter((u) => u.type === UnitType.destroyer && !!u.combat)
+        .slice(0, 2 - cruisers.length)
+      let hits = 0
+      for (const ship of [...cruisers, ...destroyers]) {
+        hits += getHits({ ...defaultRoll, hit: ship.combat!.hit }).hits
+      }
+      logWrapper(`${p.side} produced ${hits} hits with Ambush`)
+      op.hitsToAssign.hits += hits
+    },
+  },
+  {
+    type: "twilights-fall",
+    name: "Harrow (TF)",
+    description:
+      "Ability: At the end of each round of ground combat, your ships in the active system may use their BOMBARDMENT abilities against your opponent's ground forces on the planet. Only the attacker has ships to bombard with.",
+    place: "ground",
+    onCombatRoundEnd: (p: ParticipantInstance, battle: BattleInstance) => {
+      if (p.side === "attacker") {
+        doBombardment(battle, true)
+      }
+    },
+  },
+  {
+    type: "twilights-fall",
+    name: "Raid Formation (TF)",
+    description:
+      "Ability: When 1 or more of your units uses ANTI-FIGHTER BARRAGE, for each hit produced in excess of your opponent's fighters, choose 1 of your opponent's ships that has SUSTAIN DAMAGE to become damaged.",
+    place: "space",
+    afterAfb: (p: ParticipantInstance, battle: BattleInstance, op: ParticipantInstance) => {
+      _times(op.afbHitsToAssign.fighterHitsToAssign, () => {
+        const sustainUnit = getLowestWorthSustainUnit(op, battle.place, true)
+        if (sustainUnit) {
+          logWrapper(`${p.side} damaged ${sustainUnit.type} with Raid Formation`)
+          sustainUnit.takenDamage = true
+          sustainUnit.takenDamageRound = 0
+        }
+      })
+    },
+  },
+  {
+    type: "twilights-fall",
+    name: "Planesplitter (TF)",
+    description:
+      "Ability: Apply +2 to the result of each of your units' combat rolls in the Fracture. Only turn this on for a combat in the Fracture.",
+    place: "both",
+    transformUnit: (unit: UnitInstance) => {
+      if (unit.combat) {
+        return getUnitWithImproved(unit, "combat", "hit", "permanent", 2)
+      } else {
+        return unit
+      }
+    },
+  },
+]
+
+export function getTwilightsFallAbilities() {
+  return twilightsFallAbilities
+}

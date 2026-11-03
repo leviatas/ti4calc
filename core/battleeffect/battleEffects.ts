@@ -24,6 +24,11 @@ import {
   getGeneralEffectFromFactions,
   getPromissary,
 } from "@/core/factions/faction"
+import {
+  canTwilightsFallKingUse,
+  getTwilightsFallAbilities,
+  isTwilightsFallKing,
+} from "@/core/factions/twilightsFall"
 import { UnitInstance, UnitType } from "@/core/unit"
 
 export type BattleEffect = NormalBattleEffect | FactionBattleEffect
@@ -38,6 +43,8 @@ export interface NormalBattleEffect extends SharedStuffBattleEffect {
     | "agenda"
     | "action-card"
     | "relic"
+    // a Twilight's Fall ability card, only for the Mad Mahact Kings
+    | "twilights-fall"
     | "unit-upgrade"
     | "other"
     // 'faction' is faction-stuff that is automatically used
@@ -165,6 +172,7 @@ export function getAllBattleEffects() {
   const actioncards = getActioncards()
   const agendas = getAgendas()
   const relics = getRelics()
+  const twilightsFall = getTwilightsFallAbilities()
   return [
     ...otherBattleEffects,
     ...techs,
@@ -176,6 +184,7 @@ export function getAllBattleEffects() {
     ...actioncards,
     ...agendas,
     ...relics,
+    ...twilightsFall,
   ]
 }
 
@@ -190,6 +199,12 @@ export function isBattleEffectRelevantForSome(effect: BattleEffect, participant:
 export function isBattleEffectRelevant(effect: BattleEffect, participant: Participant) {
   if (effect.side !== undefined && effect.side !== participant.side) {
     return false
+  }
+  if (effect.type === "twilights-fall") {
+    return isTwilightsFallKing(participant.faction)
+  }
+  if (canTwilightsFallKingUse(participant.faction, effect)) {
+    return true
   }
   if (effect.type === "faction" || effect.type === "faction-ability") {
     if (participant.faction !== effect.faction) {
