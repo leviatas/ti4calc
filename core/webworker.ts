@@ -1,8 +1,8 @@
 import _cloneDeep from "lodash/cloneDeep"
 import _times from "lodash/times"
 
-import { BattleReport } from "@/core"
-import { Battle, BattleInstance, BattleWinner } from "@/core/battle-types"
+import { addBattleResult, BattleReport, createEmptyBattleReport, mergeBattleReports } from "@/core"
+import { Battle, BattleInstance } from "@/core/battle-types"
 import { setupBattle, startBattle } from "@/core/battleSetup"
 import {
   NUMBER_OF_ROLLS,
@@ -10,7 +10,6 @@ import {
   ROLLS_WHEN_BUILDING_TEST_DATA,
 } from "@/core/constant"
 import { ErrorReportUnsaved } from "@/server/errorReportController"
-import { objectEntries } from "@/util/util-object"
 
 //! To avoid isolatedModules error
 export default {}
@@ -30,14 +29,7 @@ self.addEventListener("message", (e) => {
 function doWork(battle: Battle) {
   const battleInstance = setupBattle(battle)
 
-  const finalData: BattleReport = {
-    attacker: 0,
-    attackerSurvivers: {},
-    draw: 0,
-    defender: 0,
-    defenderSurvivers: {},
-    numberOfRolls: 0,
-  }
+  const finalData: BattleReport = createEmptyBattleReport()
 
   const parts = Math.ceil(NUMBER_OF_ROLLS / ROLLS_BETWEEN_UI_UPDATE)
   const partRolls = Math.ceil(NUMBER_OF_ROLLS / parts)
@@ -45,15 +37,7 @@ function doWork(battle: Battle) {
   let lastMessageTime = 0
   _times(parts, (index) => {
     const partialData = getPartialReport(battleInstance, partRolls)
-    finalData.attacker += partialData.attacker
-    for (const [units, count] of objectEntries(partialData.attackerSurvivers)) {
-      finalData.attackerSurvivers[units] = (finalData.attackerSurvivers[units] ?? 0) + count
-    }
-    finalData.draw += partialData.draw
-    finalData.defender += partialData.defender
-    for (const [units, count] of objectEntries(partialData.defenderSurvivers)) {
-      finalData.defenderSurvivers[units] = (finalData.defenderSurvivers[units] ?? 0) + count
-    }
+    mergeBattleReports(finalData, partialData)
     const currentTime = new Date().getTime()
     const lastIteration = parts === index
     if (lastIteration || currentTime > lastMessageTime + MIN_TIME_BETWEEN_SENDING_UPDATES) {
@@ -69,38 +53,10 @@ function doWork(battle: Battle) {
 }
 
 function getPartialReport(battleInstance: BattleInstance, times: number) {
-  const data: BattleReport = {
-    attacker: 0,
-    attackerSurvivers: {},
-    draw: 0,
-    defender: 0,
-    defenderSurvivers: {},
-    numberOfRolls: 0,
-  }
+  const data = createEmptyBattleReport()
   _times(times, () => {
     const tmp = _cloneDeep(battleInstance)
-    const result = startBattle(tmp)
-    switch (result.winner) {
-      case BattleWinner.attacker:
-        data.attacker += 1
-        if (data.attackerSurvivers[result.units] === undefined) {
-          data.attackerSurvivers[result.units] = 1
-        } else {
-          data.attackerSurvivers[result.units]! += 1
-        }
-        break
-      case BattleWinner.draw:
-        data.draw += 1
-        break
-      case BattleWinner.defender:
-        data.defender += 1
-        if (data.defenderSurvivers[result.units] === undefined) {
-          data.defenderSurvivers[result.units] = 1
-        } else {
-          data.defenderSurvivers[result.units]! += 1
-        }
-        break
-    }
+    addBattleResult(data, startBattle(tmp))
   })
   data.numberOfRolls += times
   return data

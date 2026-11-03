@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react"
 
 import ArrowSvg from "@/component/arrowSvg"
 import CoolButton from "@/component/coolButton"
+import { ExpectedLossesView } from "@/component/expectedLossesView"
 import { BattleReport } from "@/core"
 import { useResize } from "@/util/hooks"
 import {
@@ -305,6 +306,7 @@ export function DetailedBattleReportView({ report, style }: Props) {
               A hyphen next to the character, such as F-, means that the unit has sustained damage.
             </div>
           </div>
+          <ExpectedLossesView report={report} />
         </>
       )}
     </div>

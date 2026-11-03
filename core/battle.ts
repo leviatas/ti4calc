@@ -22,10 +22,59 @@ import {
   getLowestWorthUnit,
 } from "@/core/unitGet"
 import { logWrapper } from "@/util/util-log"
+import { objectEntries } from "@/util/util-object"
+import { PartialRecord } from "@/util/util-types"
 
 // TODO add retreat?
 
+/** Units of each type able to fight in this battle that are still alive. */
+function countFightingUnits(p: ParticipantInstance, place: Place) {
+  const counts: PartialRecord<UnitType, number> = {}
+  for (const u of p.units) {
+    if (u.isDestroyed || u.type === UnitType.other || u.type === UnitType.nonunit) {
+      continue
+    }
+    if (!doesUnitFitPlace(u, place)) {
+      continue
+    }
+    counts[u.type] = (counts[u.type] ?? 0) + 1
+  }
+  return counts
+}
+
+/**
+ * Units lost: those that could fight at the start minus those alive at the end. Units placed
+ * during the battle (Mentak hero, Yin agent) do not make up for losses of another type, and a
+ * type never shows less than 0 lost.
+ */
+function getLosses(
+  before: PartialRecord<UnitType, number>,
+  after: PartialRecord<UnitType, number>,
+) {
+  const losses: PartialRecord<UnitType, number> = {}
+  for (const [type, count] of objectEntries(before)) {
+    const lost = count - (after[type] ?? 0)
+    if (lost > 0) {
+      losses[type] = lost
+    }
+  }
+  return losses
+}
+
 export function doBattle(battle: BattleInstance): BattleResult {
+  const attackerBefore = countFightingUnits(battle.attacker, battle.place)
+  const defenderBefore = countFightingUnits(battle.defender, battle.place)
+  const result = fightBattle(battle)
+  return {
+    ...result,
+    losses: {
+      attacker: getLosses(attackerBefore, countFightingUnits(battle.attacker, battle.place)),
+      defender: getLosses(defenderBefore, countFightingUnits(battle.defender, battle.place)),
+    },
+  }
+}
+
+function fightBattle(battle: BattleInstance): Omit<BattleResult, "losses"> {
   let isDuringCombat = false
   const isDuringBombardment = false
 
@@ -61,7 +110,7 @@ export function doBattle(battle: BattleInstance): BattleResult {
   isDuringCombat = true
   doAfb(battle)
 
-  let battleResult: BattleResult | undefined = undefined
+  let battleResult: Omit<BattleResult, "losses"> | undefined = undefined
   while (!battleResult) {
     logWrapper(`starting battle round`)
     doBattleRolls(battle)

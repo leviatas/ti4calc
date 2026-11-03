@@ -167,6 +167,8 @@ export interface AfbHitsToAssign {
 export interface BattleResult {
   winner: BattleWinner
   units: string
+  // units of each type that took part in the combat and were destroyed in it
+  losses: Record<Side, PartialRecord<UnitType, number>>
 }
 
 export const BattleWinner = {

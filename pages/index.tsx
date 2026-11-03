@@ -12,7 +12,7 @@ import HelpView from "@/component/helpView"
 import OptionsView from "@/component/optionsView"
 import SwitchButton from "@/component/switchButton"
 import UnitRow from "@/component/unitRow"
-import { BattleReport } from "@/core"
+import { BattleReport, createEmptyBattleReport } from "@/core"
 import { Battle, Participant } from "@/core/battle-types"
 import { Place } from "@/core/battle-types"
 import { createParticipant } from "@/core/battleSetup"
@@ -51,12 +51,8 @@ export default function Home(props: HomeProps) {
     return createParticipant("defender", undefined, props.query)
   })
   const [battleReport, setBattleReport] = useState<BattleReport>({
-    attacker: 0,
-    attackerSurvivers: {},
-    defender: 0,
+    ...createEmptyBattleReport(),
     draw: 1,
-    defenderSurvivers: {},
-    numberOfRolls: 0,
   })
 
   const [place, setPlaceRaw] = useState<Place>(() => {
