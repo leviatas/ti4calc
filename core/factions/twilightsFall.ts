@@ -22,11 +22,13 @@ import { logWrapper } from "@/util/util-log"
  * Reference: https://scottmk.github.io/ti4-reference/twilights-fall/mad-mahact-kings/
  */
 
+// Unit definitions run before the effects that give bonuses, or they would wipe them.
 function flagship(name: string, hit: number, count: number, extra?: Partial<UnitInstance>) {
   const effect: BattleEffect = {
     type: "faction",
     name,
     place: "both",
+    priority: EFFECT_HIGH_PRIORITY,
     transformUnit: (unit: UnitInstance) => {
       if (unit.type === UnitType.flagship) {
         return {
@@ -216,6 +218,7 @@ export const elNelJanovet: BattleEffect[] = [
     description:
       "Flagship: This unit gains the unit abilities and text abilities of your destroyer, cruiser, and dreadnought unit upgrade technologies.",
     place: "both",
+    priority: EFFECT_HIGH_PRIORITY,
     transformUnit: (unit: UnitInstance, p: ParticipantInstance) => {
       if (unit.type !== UnitType.flagship) {
         return unit

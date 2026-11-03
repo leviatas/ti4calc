@@ -17,7 +17,7 @@ import { Faction } from "@/core/factions/faction"
 import { getFactionBattleEffects } from "@/core/factions/faction"
 import { canTwilightsFallKingUse, isTwilightsFallKing } from "@/core/factions/twilightsFall"
 import { createUnit, galvanizeUnit, UnitInstance, UnitType } from "@/core/unit"
-import { getUnitStatsEffect } from "@/core/unitStats"
+import { getUnitStatsEffects } from "@/core/unitStats"
 import { applyQueryParams } from "@/util/query-params"
 import { objectEntries } from "@/util/util-object"
 import { PartialRecord } from "@/util/util-types"
@@ -117,10 +117,7 @@ function getParticipantBattleEffects(participant: Participant, place: Place): Ba
   )
   battleEffects.push(...factionAbilities)
 
-  const unitStatsEffect = getUnitStatsEffect(participant.unitStats)
-  if (unitStatsEffect) {
-    battleEffects.push(unitStatsEffect)
-  }
+  battleEffects.push(...getUnitStatsEffects(participant.unitStats))
 
   objectEntries(participant.unitUpgrades).forEach(([unitType, upgraded]) => {
     // custom stats are the unit's final printed values, the upgrade is already part of them
