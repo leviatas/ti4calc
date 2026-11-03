@@ -1,0 +1,29 @@
+name: Deploy
+
+# Push to main -> the self-hosted runner on the Oracle server pulls, rebuilds and
+# restarts the containers behind ti4calc.leviatas.com. No SSH keys or server
+# credentials live in GitHub; the runner is on the server itself.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Two pushes in a row deploy one after the other, never two builds at once.
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # Only from this repo, never from the upstream or other forks that copy the workflow
+    if: github.repository == 'leviatas/ti4calc'
+    runs-on: [self-hosted, ti4calc]
+    timeout-minutes: 40 # Next.js builds on ARM are slow
+    steps:
+      # No checkout on purpose: deploy.sh works on the clone in ~/proyectos/MisProyectos/ti4calc
+      # and the compose + .env (tunnel token) in ~/proyectos/MisProyectos/ti4calc-deploy.
+      - name: Deploy
+        run: bash "$HOME/proyectos/MisProyectos/ti4calc-deploy/deploy.sh"
