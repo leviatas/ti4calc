@@ -181,7 +181,3 @@ export function getGeneralEffectFromFactions() {
     return faction.filter((effect) => effect.type === "general")
   }).flat()
 }
-
-export function isTwilightsFallKing(faction: Faction) {
-  return faction.endsWith("(TF)")
-}

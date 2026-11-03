@@ -1,7 +1,7 @@
 // import Image from 'next/image'
 import { useLayoutEffect, useState } from "react"
 
-import { Faction, isTwilightsFallKing } from "@/core/factions/faction"
+import { Faction } from "@/core/factions/faction"
 
 import styles from "@/component/factionImage.module.scss"
 
@@ -20,10 +20,8 @@ export default function FactionImage(props: Props) {
   // the faction is retrieved from localstorage. Showing the faction before that would result in an ugly flash.
   // So here we make sure no image is set in ssr.
   useLayoutEffect(() => {
-    // The Twilight's Fall Mahact Kings have no artwork of their own, so they use the Mahact image.
-    const imageName = isTwilightsFallKing(props.faction)
-      ? "mahact"
-      : props.faction.replaceAll(" ", "_").replaceAll("'", "").toLowerCase()
+    // e.g. "Vuil'Raith" -> "vuilraith", "Ruby Monarch (TF)" -> "ruby_monarch_tf"
+    const imageName = props.faction.replaceAll(" ", "_").replaceAll(/['()]/g, "").toLowerCase()
     // oxlint-disable-next-line react/set-state-in-effect
     setUrl(`/factions/small/${imageName}.webp`)
   }, [props.faction])
