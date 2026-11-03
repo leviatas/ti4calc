@@ -3,7 +3,9 @@ import _times from "lodash/times"
 import { doBombardment } from "@/core/battle"
 import {
   BattleInstance,
+  EFFECT_DEFAULT_PRIORITY,
   EFFECT_HIGH_PRIORITY,
+  EFFECT_LOW_PRIORITY,
   ParticipantInstance,
   Place,
 } from "@/core/battle-types"
@@ -433,7 +435,7 @@ export const twilightsFallAbilities: BattleEffect[] = [
     type: "twilights-fall",
     name: "Planesplitter (TF)",
     description:
-      "Ability: Apply +2 to the result of each of your units' combat rolls in the Fracture. Only turn this on for a combat in the Fracture.",
+      "Ability: Apply +2 to the result of each of your units' combat rolls in the Fracture. Only turn this on for a combat in the Fracture; links from the async web do so on their own.",
     place: "both",
     transformUnit: (unit: UnitInstance) => {
       if (unit.combat) {
@@ -444,6 +446,79 @@ export const twilightsFallAbilities: BattleEffect[] = [
     },
   },
 ]
+
+/**
+ * Spliced mech and flagship upgrades are kept in the play area and act in addition to the king's
+ * own card, so they modify the king's unit instead of replacing it. They run after the king's own
+ * unit is defined (lower priority) and only add bonuses, so several of them stack.
+ */
+const AFTER_UNIT_DEFINITION = EFFECT_DEFAULT_PRIORITY - 5
+
+const splicedUnitUpgrades: BattleEffect[] = [
+  {
+    type: "twilights-fall",
+    name: "Echo of Ascension (TF)",
+    description:
+      "Spliced flagship upgrade: decrease the combat value of your flagship by 1 and increase the number of combat dice it rolls by 1.",
+    place: "both",
+    priority: AFTER_UNIT_DEFINITION,
+    transformUnit: (unit: UnitInstance) => {
+      if (unit.type !== UnitType.flagship || !unit.combat) {
+        return unit
+      }
+      const better = getUnitWithImproved(unit, "combat", "hit", "permanent")
+      return getUnitWithImproved(better, "combat", "count", "permanent")
+    },
+  },
+  {
+    type: "twilights-fall",
+    name: "Eidolon Landwaster (TF)",
+    description: "Spliced mech upgrade: your mechs roll 1 additional die during combat.",
+    place: "both",
+    priority: AFTER_UNIT_DEFINITION,
+    transformUnit: (unit: UnitInstance) => {
+      if (unit.type !== UnitType.mech || !unit.combat) {
+        return unit
+      }
+      return getUnitWithImproved(unit, "combat", "count", "permanent")
+    },
+  },
+  {
+    type: "twilights-fall",
+    name: "Eidolon Terminus (TF)",
+    description: "Spliced mech upgrade: the COMBAT value of your mechs is reduced by 1.",
+    place: "both",
+    priority: AFTER_UNIT_DEFINITION,
+    transformUnit: (unit: UnitInstance) => {
+      if (unit.type !== UnitType.mech || !unit.combat) {
+        return unit
+      }
+      return getUnitWithImproved(unit, "combat", "hit", "permanent")
+    },
+  },
+]
+
+twilightsFallAbilities.push(
+  {
+    type: "twilights-fall",
+    name: "Smothering Presence (TF)",
+    description:
+      "Ability: Other players' units in or adjacent to systems that contain your structures lose all of their unit abilities (ANTI-FIGHTER BARRAGE, BOMBARDMENT, SPACE CANNON, SUSTAIN DAMAGE, PLANETARY SHIELD). Turn it on when you have a structure in or next to the combat's system.",
+    place: "both",
+    priority: EFFECT_LOW_PRIORITY,
+    transformEnemyUnit: (unit: UnitInstance) => {
+      return {
+        ...unit,
+        afb: undefined,
+        bombardment: undefined,
+        spaceCannon: undefined,
+        sustainDamage: false,
+        planetaryShield: false,
+      }
+    },
+  },
+  ...splicedUnitUpgrades,
+)
 
 export function getTwilightsFallAbilities() {
   return twilightsFallAbilities

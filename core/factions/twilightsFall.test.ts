@@ -241,6 +241,77 @@ describe("Twilight's Fall abilities", () => {
   })
 })
 
+describe("Twilight's Fall spliced mechs and flagships", () => {
+  it("Echo of Ascension makes the king's flagship roll one more die, one better", () => {
+    const attacker = getTestParticipant("attacker", { flagship: 1 }, "Ruby Monarch (TF)", {
+      "Echo of Ascension (TF)": 1,
+    })
+    const defender = getTestParticipant("defender", { dreadnought: 2 })
+
+    testBattleReport(attacker, defender, "space", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.21 },
+      { side: "draw", percentage: 0.312 },
+      { side: "defender", percentage: 0.479 },
+    ])
+  })
+
+  it("Eidolon Landwaster and Eidolon Terminus stack on the king's mech", () => {
+    const attacker = getTestParticipant("attacker", { mech: 2 }, "Ruby Monarch (TF)", {
+      "Eidolon Landwaster (TF)": 1,
+      "Eidolon Terminus (TF)": 1,
+    })
+    const defender = getTestParticipant("defender", { mech: 2 })
+
+    testBattleReport(attacker, defender, "ground", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.933 },
+      { side: "draw", percentage: 0.045 },
+      { side: "defender", percentage: 0.022 },
+    ])
+  })
+
+  it("Eidolon Landwaster alone adds a die to the king's mech", () => {
+    const attacker = getTestParticipant("attacker", { mech: 2 }, "Ruby Monarch (TF)", {
+      "Eidolon Landwaster (TF)": 1,
+    })
+    const defender = getTestParticipant("defender", { mech: 2 })
+
+    testBattleReport(attacker, defender, "ground", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.867 },
+      { side: "draw", percentage: 0.068 },
+      { side: "defender", percentage: 0.065 },
+    ])
+  })
+})
+
+describe("Twilight's Fall abilities that depend on the map", () => {
+  it("Planesplitter applies +2 to every combat roll", () => {
+    const attacker = getTestParticipant("attacker", { cruiser: 2 }, "Ruby Monarch (TF)", {
+      "Planesplitter (TF)": 1,
+    })
+    const defender = getTestParticipant("defender", { cruiser: 2 })
+
+    testBattleReport(attacker, defender, "space", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.623 },
+      { side: "draw", percentage: 0.149 },
+      { side: "defender", percentage: 0.227 },
+    ])
+  })
+
+  it("Smothering Presence takes sustain damage from the opponent", () => {
+    // same as 3 cruisers against 2 dreadnoughts printed without sustain damage
+    const attacker = getTestParticipant("attacker", { cruiser: 3 }, "Ruby Monarch (TF)", {
+      "Smothering Presence (TF)": 1,
+    })
+    const defender = getTestParticipant("defender", { dreadnought: 2 })
+
+    testBattleReport(attacker, defender, "space", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.666 },
+      { side: "draw", percentage: 0.087 },
+      { side: "defender", percentage: 0.248 },
+    ])
+  })
+})
+
 describe("Custom unit stats", () => {
   it("parses the stats string", () => {
     const stats = parseUnitStats("c4x1.b4x2.sd.dh")!
