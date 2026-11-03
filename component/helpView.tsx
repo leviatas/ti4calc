@@ -95,7 +95,7 @@ export default function HelpView({ style }: Props) {
                 Variant: Twilight&apos;s Fall is partly supported. The Mad Mahact Kings, the combat
                 abilities they can splice, the spliced mech and flagship upgrades and a few genomes
                 are modelled. Other spliced unit upgrades only get their printed stats (as
-                &quot;Custom unit stats&quot;), not their text abilities.
+                &quot;Spliced unit upgrades&quot;), not their text abilities.
               </li>
               <li>
                 Several advanced use cases such as triggering Last Bastion hero are used in a naive
