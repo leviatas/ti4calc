@@ -15,7 +15,9 @@ import { BattleEffect, getAllBattleEffects } from "@/core/battleeffect/battleEff
 import { getUnitUpgrade } from "@/core/battleeffect/unitUpgrades"
 import { Faction } from "@/core/factions/faction"
 import { getFactionBattleEffects } from "@/core/factions/faction"
+import { canTwilightsFallKingUse, isTwilightsFallKing } from "@/core/factions/twilightsFall"
 import { createUnit, galvanizeUnit, UnitInstance, UnitType } from "@/core/unit"
+import { getUnitStatsEffect } from "@/core/unitStats"
 import { applyQueryParams } from "@/util/query-params"
 import { objectEntries } from "@/util/util-object"
 import { PartialRecord } from "@/util/util-types"
@@ -91,11 +93,20 @@ function getParticipantBattleEffects(participant: Participant, place: Place): Ba
     if (battleEffectCount === undefined || battleEffectCount === 0) {
       continue
     }
-    const effect = allBattleEffects.find((e) => e.name === effectName)!
+    const effect = allBattleEffects.find((e) => e.name === effectName)
+    // unknown names can come from links built by other sites
+    if (effect === undefined) {
+      continue
+    }
+    // Twilight's Fall abilities belong to the Mad Mahact Kings only
+    if (effect.type === "twilights-fall" && !isTwilightsFallKing(participant.faction)) {
+      continue
+    }
     if (
       effect.faction === undefined ||
       effect.faction === participant.faction ||
-      participant.faction === "Nekro"
+      participant.faction === "Nekro" ||
+      canTwilightsFallKingUse(participant.faction, effect)
     ) {
       battleEffects.push(effect)
     }
@@ -106,8 +117,14 @@ function getParticipantBattleEffects(participant: Participant, place: Place): Ba
   )
   battleEffects.push(...factionAbilities)
 
+  const unitStatsEffect = getUnitStatsEffect(participant.unitStats)
+  if (unitStatsEffect) {
+    battleEffects.push(unitStatsEffect)
+  }
+
   objectEntries(participant.unitUpgrades).forEach(([unitType, upgraded]) => {
-    if (upgraded) {
+    // custom stats are the unit's final printed values, the upgrade is already part of them
+    if (upgraded && participant.unitStats?.[unitType] === undefined) {
       const unitUpgrade = getUnitUpgrade(participant.faction, unitType)
       if (unitUpgrade) {
         battleEffects.push(unitUpgrade)

@@ -3,6 +3,7 @@ import { Place } from "@/core/battle-types"
 import { getAllBattleEffects } from "@/core/battleeffect/battleEffects"
 import { ALL_FACTIONS, Faction } from "@/core/factions/faction"
 import { UnitType } from "@/core/unit"
+import { isValidUnitStats } from "@/core/unitStats"
 import { objectEntries, objectKeys } from "@/util/util-object"
 
 const allBattleEffects = getAllBattleEffects()
@@ -47,6 +48,12 @@ function addParticipant(params: URLSearchParams, p: Omit<Participant, "side">, s
     const actualNumber = Math.min(unit[1], ownedUnits)
     if (actualNumber) {
       params.set(`${side}-galvanized-${unit[0]}`, `${actualNumber}`)
+    }
+  }
+
+  for (const [unitType, stats] of objectEntries(p.unitStats ?? {})) {
+    if (stats) {
+      params.set(`${side}-stats-${unitType}`, stats)
     }
   }
 
@@ -168,6 +175,28 @@ export function applyQueryParams(
         return
       } else if (side === participant.side) {
         participant.galvanizedUnits[unit] = num
+      }
+    }
+
+    const unitStatsMatch = key.match(/(attacker|defender)-stats-(.*)/)
+    if (unitStatsMatch) {
+      const side = unitStatsMatch[1]
+      const unit = unitStatsMatch[2] as UnitType
+      if (!isSide(side)) {
+        console.warn(`failed to identify Side: ${side}`)
+        return
+      }
+
+      if (!Object.values(UnitType).includes(unit)) {
+        console.warn(`Unknown unit found: ${unit}`)
+        return
+      }
+
+      if (!isValidUnitStats(value)) {
+        console.warn(`Invalid unit stats for ${unit}: ${value}`)
+        return
+      } else if (side === participant.side) {
+        participant.unitStats = { ...participant.unitStats, [unit]: value }
       }
     }
 

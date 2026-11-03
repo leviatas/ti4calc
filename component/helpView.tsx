@@ -91,7 +91,12 @@ export default function HelpView({ style }: Props) {
                 not implemented.
               </li>
               <li>Breakthrough: The Nekro Virus</li>
-              <li>Variant: Twilight&apos;s Fall</li>
+              <li>
+                Variant: Twilight&apos;s Fall is partly supported. The Mad Mahact Kings, the combat
+                abilities they can splice and a few genomes are modelled. Spliced unit upgrades only
+                get their printed stats (as &quot;Custom unit stats&quot;), not their text
+                abilities, and spliced mechs and flagships are not modelled.
+              </li>
               <li>
                 Several advanced use cases such as triggering Last Bastion hero are used in a naive
                 way. They simply trigger at the first opportunity without changing in which order
