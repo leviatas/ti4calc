@@ -125,7 +125,7 @@ export default function OptionsView(props: OptionsProps) {
               left={getUnitStatsView(props.attacker, props.attackerOnChange)}
               right={getUnitStatsView(props.defender, props.defenderOnChange)}
               name="Custom unit stats"
-              description="Printed stats for units the calculator has no model of, such as Twilight's Fall unit upgrades spliced from another faction. They are usually filled in by a link from a game. c = combat, a = anti-fighter barrage, b = bombardment, s = space cannon (hit value x dice), sd = sustain damage, ps = planetary shield, dh = immune to direct hit. Clear them to use the normal units."
+              description="Printed stats for units the calculator has no model of, such as Twilight's Fall unit upgrades spliced from another faction. They are usually filled in by a link from a game. c = combat, a = anti-fighter barrage, b = bombardment, s = space cannon (hit value x dice), sd = sustain damage, ps = planetary shield, dh = immune to direct hit. For flagships and mechs only the listed rolls are set and the unit keeps its other abilities. Clear them to use the normal units."
             />
           )}
           <DamagedUnitsView {...props} />

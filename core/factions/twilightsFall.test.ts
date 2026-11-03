@@ -241,6 +241,132 @@ describe("Twilight's Fall abilities", () => {
   })
 })
 
+describe("Twilight's Fall spliced mechs and flagships", () => {
+  it("Echo of Ascension makes the king's flagship roll one more die, one better", () => {
+    const attacker = getTestParticipant("attacker", { flagship: 1 }, "Ruby Monarch (TF)", {
+      "Echo of Ascension (TF)": 1,
+    })
+    const defender = getTestParticipant("defender", { dreadnought: 2 })
+
+    testBattleReport(attacker, defender, "space", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.21 },
+      { side: "draw", percentage: 0.312 },
+      { side: "defender", percentage: 0.479 },
+    ])
+  })
+
+  it("Eidolon Landwaster and Eidolon Terminus stack on the king's mech", () => {
+    const attacker = getTestParticipant("attacker", { mech: 2 }, "Ruby Monarch (TF)", {
+      "Eidolon Landwaster (TF)": 1,
+      "Eidolon Terminus (TF)": 1,
+    })
+    const defender = getTestParticipant("defender", { mech: 2 })
+
+    testBattleReport(attacker, defender, "ground", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.933 },
+      { side: "draw", percentage: 0.045 },
+      { side: "defender", percentage: 0.022 },
+    ])
+  })
+
+  it("Eidolon Landwaster alone adds a die to the king's mech", () => {
+    const attacker = getTestParticipant("attacker", { mech: 2 }, "Ruby Monarch (TF)", {
+      "Eidolon Landwaster (TF)": 1,
+    })
+    const defender = getTestParticipant("defender", { mech: 2 })
+
+    testBattleReport(attacker, defender, "ground", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.867 },
+      { side: "draw", percentage: 0.068 },
+      { side: "defender", percentage: 0.065 },
+    ])
+  })
+})
+
+describe("Twilight's Fall kings' own units", () => {
+  it("a king's flagship keeps the bonuses of its abilities", () => {
+    const attacker = getTestParticipant("attacker", { flagship: 1 }, "Ruby Monarch (TF)", {
+      "Unrelenting (TF)": 1,
+    })
+    const defender = getTestParticipant("defender", { dreadnought: 2 })
+
+    testBattleReport(attacker, defender, "space", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.086 },
+      { side: "draw", percentage: 0.169 },
+      { side: "defender", percentage: 0.746 },
+    ])
+  })
+
+  it("stats for a king's flagship set its rolls and keep its bonuses", () => {
+    // A Sickening Lurch's flagship printed like Ruby Monarch's: same result as the test above
+    const attacker = getTestParticipant("attacker", { flagship: 1 }, "A Sickening Lurch (TF)", {
+      "Unrelenting (TF)": 1,
+    })
+    attacker.unitStats = { flagship: "c5x2.sd" }
+    const defender = getTestParticipant("defender", { dreadnought: 2 })
+
+    testBattleReport(attacker, defender, "space", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.086 },
+      { side: "draw", percentage: 0.169 },
+      { side: "defender", percentage: 0.746 },
+    ])
+  })
+
+  it("stats for a king's mech set its rolls and keep its abilities", () => {
+    // Radiant Aur's mechs keep their planetary shield: same as Eidolon Terminus (6 -> 5)
+    const attacker = getTestParticipant("attacker", { dreadnought: 2, infantry: 4 })
+    const defender = getTestParticipant("defender", { mech: 2 }, "Radiant Aur (TF)")
+    defender.unitStats = { mech: "c5x1.sd" }
+
+    testBattleReport(attacker, defender, "ground", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.287 },
+      { side: "draw", percentage: 0.05 },
+      { side: "defender", percentage: 0.663 },
+    ])
+  })
+
+  it("a king's mech without planetary shield is bombarded", () => {
+    const attacker = getTestParticipant("attacker", { dreadnought: 2, infantry: 4 })
+    const defender = getTestParticipant("defender", { mech: 2 }, "Ruby Monarch (TF)")
+    defender.unitStats = { mech: "c5x1.sd" }
+
+    testBattleReport(attacker, defender, "ground", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.59 },
+      { side: "draw", percentage: 0.049 },
+      { side: "defender", percentage: 0.36 },
+    ])
+  })
+})
+
+describe("Twilight's Fall abilities that depend on the map", () => {
+  it("Planesplitter applies +2 to every combat roll", () => {
+    const attacker = getTestParticipant("attacker", { cruiser: 2 }, "Ruby Monarch (TF)", {
+      "Planesplitter (TF)": 1,
+    })
+    const defender = getTestParticipant("defender", { cruiser: 2 })
+
+    testBattleReport(attacker, defender, "space", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.623 },
+      { side: "draw", percentage: 0.149 },
+      { side: "defender", percentage: 0.227 },
+    ])
+  })
+
+  it("Smothering Presence takes sustain damage from the opponent", () => {
+    // same as 3 cruisers against 2 dreadnoughts printed without sustain damage
+    const attacker = getTestParticipant("attacker", { cruiser: 3 }, "Ruby Monarch (TF)", {
+      "Smothering Presence (TF)": 1,
+    })
+    const defender = getTestParticipant("defender", { dreadnought: 2 })
+
+    testBattleReport(attacker, defender, "space", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.666 },
+      { side: "draw", percentage: 0.087 },
+      { side: "defender", percentage: 0.248 },
+    ])
+  })
+})
+
 describe("Custom unit stats", () => {
   it("parses the stats string", () => {
     const stats = parseUnitStats("c4x1.b4x2.sd.dh")!

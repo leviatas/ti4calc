@@ -1,4 +1,4 @@
-import { EFFECT_HIGH_PRIORITY } from "@/core/battle-types"
+import { EFFECT_HIGH_PRIORITY, EFFECT_LOW_PRIORITY } from "@/core/battle-types"
 import { BattleEffect } from "@/core/battleeffect/battleEffects"
 import { defaultRoll, Roll, UnitInstance, UnitType } from "@/core/unit"
 import { objectEntries, objectKeys } from "@/util/util-object"
@@ -17,7 +17,8 @@ import { PartialRecord } from "@/util/util-types"
  * - `dh` immune to direct hit
  *
  * The stats replace the unit's printed values completely: a roll that is not listed is removed.
- * Bonuses from other effects (techs, abilities, action cards) still apply on top.
+ * Bonuses from other effects (techs, abilities, action cards) still apply on top. Flagships and
+ * mechs are the exception, see `getUnitStatsEffects`.
  */
 export interface UnitStats {
   combat?: Roll
@@ -92,12 +93,44 @@ function applyUnitStats(unit: UnitInstance, stats: UnitStats): UnitInstance {
 }
 
 /**
- * The battle effect that gives units their custom stats. It runs before every other transform,
- * so faction abilities and techs that improve rolls still add their bonuses afterwards.
+ * Flagships and mechs of the Twilight's Fall kings keep their own card in play when a spliced
+ * upgrade of the same type is gained. For them the stats only set the printed rolls they list
+ * (and sustain damage), and the unit keeps its other abilities, such as a king's planetary shield
+ * or bombardment.
  */
-export function getUnitStatsEffect(
+const UNITS_THAT_KEEP_THEIR_ABILITIES: UnitType[] = [UnitType.flagship, UnitType.mech]
+
+function withPrintedRoll(current: Roll | undefined, printed: Roll | undefined): Roll | undefined {
+  if (!printed) {
+    return current
+  }
+  return { ...(current ?? defaultRoll), hit: printed.hit, count: printed.count }
+}
+
+function applyPrintedRolls(unit: UnitInstance, stats: UnitStats): UnitInstance {
+  return {
+    ...unit,
+    combat: withPrintedRoll(unit.combat, stats.combat),
+    afb: withPrintedRoll(unit.afb, stats.afb),
+    bombardment: withPrintedRoll(unit.bombardment, stats.bombardment),
+    spaceCannon: withPrintedRoll(unit.spaceCannon, stats.spaceCannon),
+    sustainDamage: unit.sustainDamage || stats.sustainDamage,
+    planetaryShield: unit.planetaryShield || stats.planetaryShield,
+    immuneToDirectHit: !!unit.immuneToDirectHit || stats.immuneToDirectHit,
+  }
+}
+
+/**
+ * The battle effects that give units their custom stats.
+ *
+ * Most units are replaced whole, before every other transform, so faction abilities and techs
+ * that improve rolls still add their bonuses afterwards. Flagships and mechs get only their
+ * printed rolls, after the faction has defined its unit (which sets the rolls of a king's own
+ * flagship and mech) and keeping every bonus already given.
+ */
+export function getUnitStatsEffects(
   unitStats: PartialRecord<UnitType, string> | undefined,
-): BattleEffect | undefined {
+): BattleEffect[] {
   const parsed: PartialRecord<UnitType, UnitStats> = {}
   for (const [unitType, value] of objectEntries(unitStats ?? {})) {
     const stats = parseUnitStats(value)
@@ -106,16 +139,30 @@ export function getUnitStatsEffect(
     }
   }
   if (objectKeys(parsed).length === 0) {
-    return undefined
+    return []
   }
-  return {
-    type: "other",
-    name: "Custom unit stats",
-    place: "both",
-    priority: EFFECT_HIGH_PRIORITY + 25,
-    transformUnit: (unit: UnitInstance) => {
-      const stats = parsed[unit.type]
-      return stats ? applyUnitStats(unit, stats) : unit
+  const keepsAbilities = (type: UnitType) => UNITS_THAT_KEEP_THEIR_ABILITIES.includes(type)
+  return [
+    {
+      type: "other",
+      name: "Custom unit stats",
+      place: "both",
+      priority: EFFECT_HIGH_PRIORITY + 25,
+      transformUnit: (unit: UnitInstance) => {
+        const stats = parsed[unit.type]
+        return stats && !keepsAbilities(unit.type) ? applyUnitStats(unit, stats) : unit
+      },
     },
-  }
+    {
+      type: "other",
+      name: "Custom unit stats (flagship and mech)",
+      place: "both",
+      // after every unit definition, before the effects that take unit abilities away
+      priority: EFFECT_LOW_PRIORITY + 5,
+      transformUnit: (unit: UnitInstance) => {
+        const stats = parsed[unit.type]
+        return stats && keepsAbilities(unit.type) ? applyPrintedRolls(unit, stats) : unit
+      },
+    },
+  ]
 }
