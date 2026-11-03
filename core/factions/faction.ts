@@ -35,6 +35,14 @@ export type Faction =
   | "Xxcha"
   | "Yin"
   | "Yssaril"
+  | "Ruby Monarch (TF)"
+  | "Radiant Aur (TF)"
+  | "Avarice Rex (TF)"
+  | "Il Sai Lakoe (TF)"
+  | "Saint of Swords (TF)"
+  | "Il Na Viroset (TF)"
+  | "El Nel Janovet (TF)"
+  | "A Sickening Lurch (TF)"
 import { arborec } from "@/core/factions/arborec"
 import { argentFlight } from "@/core/factions/argentFlight"
 import { baronyOfLetnev } from "@/core/factions/baronyOfLetnev"
@@ -62,6 +70,16 @@ import { ralNelConsortium } from "@/core/factions/ralNelConsortium"
 import { sardarkkNorr } from "@/core/factions/sardakkNorr"
 import { sol } from "@/core/factions/sol"
 import { titansOfUl } from "@/core/factions/titansOfUl"
+import {
+  rubyMonarch,
+  radiantAur,
+  avariceRex,
+  ilSaiLakoe,
+  saintOfSwords,
+  ilNaViroset,
+  elNelJanovet,
+  aSickeningLurch,
+} from "@/core/factions/twilightsFall"
 import { vuilRaith } from "@/core/factions/vuilRaith"
 import { winnu } from "@/core/factions/winnu"
 import { xxcha } from "@/core/factions/xxcha"
@@ -101,6 +119,14 @@ const FACTION_MAP: Record<Faction, BattleEffect[]> = {
   Xxcha: xxcha,
   Yin: yin,
   Yssaril: yssaril,
+  "Ruby Monarch (TF)": rubyMonarch,
+  "Radiant Aur (TF)": radiantAur,
+  "Avarice Rex (TF)": avariceRex,
+  "Il Sai Lakoe (TF)": ilSaiLakoe,
+  "Saint of Swords (TF)": saintOfSwords,
+  "Il Na Viroset (TF)": ilNaViroset,
+  "El Nel Janovet (TF)": elNelJanovet,
+  "A Sickening Lurch (TF)": aSickeningLurch,
 }
 
 export const ALL_FACTIONS = objectKeys(FACTION_MAP)
@@ -154,4 +180,8 @@ export function getGeneralEffectFromFactions() {
     const faction = FACTION_MAP[factionName]
     return faction.filter((effect) => effect.type === "general")
   }).flat()
+}
+
+export function isTwilightsFallKing(faction: Faction) {
+  return faction.endsWith("(TF)")
 }
