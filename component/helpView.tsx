@@ -47,20 +47,30 @@ export default function HelpView({ style }: Props) {
             change slightly from the initial value.
           </div>
           <div>
-            Source code is available at{" "}
+            This is a fork of{" "}
+            <a href="https://ti4battle.com" target="_blank" rel="noopener noreferrer">
+              ti4battle.com
+            </a>{" "}
+            by Per Sandström (
             <a
               href="https://github.com/pgsandstrom/ti4calc"
               target="_blank"
               rel="noopener noreferrer"
             >
+              original source
+            </a>
+            ), adapted to work with Twilight Fall.
+          </div>
+          <div>
+            Source code for this fork is available at{" "}
+            <a href="https://github.com/leviatas/ti4calc" target="_blank" rel="noopener noreferrer">
               Github
             </a>
             . I welcome suggestions and bug reports! I can also be reached on{" "}
-            <a href="https://twitter.com/pgsandstrom" target="_blank" rel="noopener noreferrer">
+            <a href="https://twitter.com/leviatas" target="_blank" rel="noopener noreferrer">
               Twitter
             </a>{" "}
-            or via mail at{" "}
-            <a href="mailto:ti4battle@persandstrom.com">ti4battle@persandstrom.com</a>.
+            or via mail at <a href="mailto:epeluffo@leviatas.com">epeluffo@leviatas.com</a>.
           </div>
           <div>
             <span>Known missing features:</span>

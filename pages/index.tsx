@@ -205,14 +205,14 @@ export default function Home(props: HomeProps) {
           I apologize for the inconvenience. The crash has been logged and hopefully I will soon fix
           it. If you have a github account, please submit a bug report{" "}
           <a
-            href="https://github.com/pgsandstrom/ti4calc/issues/new"
+            href="https://github.com/leviatas/ti4calc/issues/new"
             target="_blank"
             rel="noreferrer"
           >
             here
           </a>
           , otherwise send me a mail at{" "}
-          <a href="mailto:ti4battle@persandstrom.com">ti4battle@persandstrom.com</a>
+          <a href="mailto:epeluffo@leviatas.com">epeluffo@leviatas.com</a>
         </div>
         <div style={{ marginTop: "10px" }}>Please include the data below.</div>
         <div style={{ marginTop: "10px", border: "1px solid black", padding: "10px" }}>
