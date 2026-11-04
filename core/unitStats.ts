@@ -15,6 +15,7 @@ import { PartialRecord } from "@/util/util-types"
  * - `sd` sustain damage
  * - `ps` planetary shield
  * - `dh` immune to direct hit
+ * - `nf` its hits must be assigned to non-fighter ships if able (Justicer Rail)
  *
  * The stats replace the unit's printed values completely: a roll that is not listed is removed.
  * Bonuses from other effects (techs, abilities, action cards) still apply on top. Flagships and
@@ -28,6 +29,7 @@ export interface UnitStats {
   sustainDamage: boolean
   planetaryShield: boolean
   immuneToDirectHit: boolean
+  assignHitsToNonFighters: boolean
 }
 
 const ROLL_TOKENS = {
@@ -42,6 +44,7 @@ export function parseUnitStats(value: string): UnitStats | undefined {
     sustainDamage: false,
     planetaryShield: false,
     immuneToDirectHit: false,
+    assignHitsToNonFighters: false,
   }
   const tokens = value.split(".").filter((t) => t.length > 0)
   if (tokens.length === 0) {
@@ -58,6 +61,10 @@ export function parseUnitStats(value: string): UnitStats | undefined {
     }
     if (token === "dh") {
       stats.immuneToDirectHit = true
+      continue
+    }
+    if (token === "nf") {
+      stats.assignHitsToNonFighters = true
       continue
     }
     const rollMatch = token.match(/^([cabs])(\d+)x(\d+)$/)
@@ -104,6 +111,9 @@ export function describeUnitStats(value: string): string | undefined {
   if (stats.immuneToDirectHit) {
     parts.push("Immune to Direct Hit")
   }
+  if (stats.assignHitsToNonFighters) {
+    parts.push("Hits to non-fighter ships if able")
+  }
   return parts.join(", ")
 }
 
@@ -132,6 +142,7 @@ function applyUnitStats(unit: UnitInstance, stats: UnitStats): UnitInstance {
     sustainDamage: stats.sustainDamage,
     planetaryShield: stats.planetaryShield,
     immuneToDirectHit: stats.immuneToDirectHit,
+    assignHitsToNonFighters: !!unit.assignHitsToNonFighters || stats.assignHitsToNonFighters,
   }
 }
 
@@ -160,6 +171,7 @@ function applyPrintedRolls(unit: UnitInstance, stats: UnitStats): UnitInstance {
     sustainDamage: unit.sustainDamage || stats.sustainDamage,
     planetaryShield: unit.planetaryShield || stats.planetaryShield,
     immuneToDirectHit: !!unit.immuneToDirectHit || stats.immuneToDirectHit,
+    assignHitsToNonFighters: !!unit.assignHitsToNonFighters || stats.assignHitsToNonFighters,
   }
 }
 

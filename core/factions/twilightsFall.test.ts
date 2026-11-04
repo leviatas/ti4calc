@@ -378,6 +378,8 @@ describe("Custom unit stats", () => {
     assert.equal(stats.sustainDamage, true)
     assert.equal(stats.immuneToDirectHit, true)
     assert.equal(stats.planetaryShield, false)
+    assert.equal(stats.assignHitsToNonFighters, false)
+    assert.equal(parseUnitStats("s5x1.ps.nf")!.assignHitsToNonFighters, true)
     assert.equal(parseUnitStats("c11x1"), undefined)
     assert.equal(parseUnitStats("nonsense"), undefined)
     assert.equal(parseUnitStats(""), undefined)
@@ -413,6 +415,10 @@ describe("Custom unit stats", () => {
       "Combat 4, Bombardment 4 (x2), Sustain damage, Immune to Direct Hit",
     )
     assert.equal(describeUnitStats("c8x1.a6x3"), "Combat 8, Anti-fighter barrage 6 (x3)")
+    assert.equal(
+      describeUnitStats("s5x1.ps.nf"),
+      "Space cannon 5, Planetary shield, Hits to non-fighter ships if able",
+    )
     assert.equal(describeUnitStats("bad"), undefined)
   })
 
@@ -460,6 +466,59 @@ describe("Custom unit stats", () => {
       { side: "attacker", percentage: 0.443 },
       { side: "draw", percentage: 0.115 },
       { side: "defender", percentage: 0.443 },
+    ])
+  })
+
+  it("space cannon hits from nf stats go to non-fighter ships", () => {
+    // Justicer Rail always hitting: the damaged dreadnought dies instead of the fighter
+    const attacker = getTestParticipant(
+      "attacker",
+      { dreadnought: 1, fighter: 1 },
+      undefined,
+      {},
+      {},
+      { dreadnought: 1 },
+    )
+    const defender = getTestParticipant("defender", { pds: 1, destroyer: 1 }, "El Nel Janovet (TF)")
+    defender.unitStats = { pds: "s1x1.ps.nf" }
+
+    testBattleReport(attacker, defender, "space", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.284 },
+      { side: "draw", percentage: 0.071 },
+      { side: "defender", percentage: 0.645 },
+    ])
+  })
+
+  it("space cannon hits without nf stats may go to fighters", () => {
+    // the same battle without nf: the fighter dies and the dreadnought fights on
+    const attacker = getTestParticipant(
+      "attacker",
+      { dreadnought: 1, fighter: 1 },
+      undefined,
+      {},
+      {},
+      { dreadnought: 1 },
+    )
+    const defender = getTestParticipant("defender", { pds: 1, destroyer: 1 }, "El Nel Janovet (TF)")
+    defender.unitStats = { pds: "s1x1.ps" }
+
+    testBattleReport(attacker, defender, "space", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.706 },
+      { side: "draw", percentage: 0.176 },
+      { side: "defender", percentage: 0.118 },
+    ])
+  })
+
+  it("space cannon hits from nf stats go to fighters when only fighters are left", () => {
+    // nothing but fighters to hit: same as without nf
+    const attacker = getTestParticipant("attacker", { fighter: 3 })
+    const defender = getTestParticipant("defender", { pds: 1, destroyer: 1 }, "El Nel Janovet (TF)")
+    defender.unitStats = { pds: "s1x1.ps.nf" }
+
+    testBattleReport(attacker, defender, "space", TEST_NUMBER_OF_ROLLS, [
+      { side: "attacker", percentage: 0.69 },
+      { side: "draw", percentage: 0.054 },
+      { side: "defender", percentage: 0.256 },
     ])
   })
 })
